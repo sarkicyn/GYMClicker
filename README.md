@@ -66,9 +66,16 @@ If the strength threshold is not met, performance is weaker even with significan
 Higher placements provide better rewards and bonuses.
 
 
+
 ![Gameplay](Assets/photo_5229198970549115549_y.jpg)
 
 
+
+## 🎥 YouTube Channel
+
+This channel contains game development progress, Unity prototypes, gameplay mechanics, and early development builds of the future game project.
+
+YouTube: https://www.youtube.com/channel/UC7Vx2_C9kIreoIXDvWJHdcw
 
 TECHNOLOGIES USED
 
