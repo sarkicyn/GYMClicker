@@ -1,8 +1,8 @@
-📝 SHORT DESCRIPTION
+📝 Short Description
 
-This project is a Unity-based game with training mechanics where player progression depends on strength gained through repetitions. 
-
-The core gameplay focuses on building strength, overcoming thresholds, and leveling up based on performance.
+This project is a Unity-based game prototype with training mechanics where player progression depends on strength gained through repetitions.
+The core gameplay focuses on building strength, overcoming thresholds, and leveling up based on performance. 
+The repository contains early development work and core systems for a future game project.
 
 
 
@@ -67,6 +67,15 @@ Higher placements provide better rewards and bonuses.
 
 
 
+![Gameplay](Assets/photo_5229198970549115549_y.jpg)
+
+
+
+## 🎥 YouTube Channel
+
+This channel contains game development progress, Unity prototypes, gameplay mechanics, and early development builds of the future game project.
+
+YouTube: https://www.youtube.com/channel/UC7Vx2_C9kIreoIXDvWJHdcw
 
 TECHNOLOGIES USED
 
