@@ -66,7 +66,7 @@ If the strength threshold is not met, performance is weaker even with significan
 Higher placements provide better rewards and bonuses.
 
 
-![Gameplay](photo_5229198970549115549_y.jpg)
+![Gameplay](Assets/photo_5229198970549115549_y.jpg)
 
 
 
