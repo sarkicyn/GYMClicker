@@ -1,0 +1,6 @@
+# Ignore every new/untracked file by default.
+# Already tracked files remain tracked and will still show changes.
+*
+
+# Keep this ignore file visible so it can be committed.
+!.gitignore

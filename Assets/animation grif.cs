@@ -2,14 +2,25 @@ using System.Collections;
 using Unity.VisualScripting.Antlr3.Runtime;
 using UnityEngine;
 
+/// <summary>
+/// Управляет кликами по объекту тренировки и анимациями грифа.
+/// Скрипт получает разрешение на тренировку от TutorUI/gameLogic,
+/// а при успешном повторении вызывает gameLogic.Train(), чтобы начислить прогресс и потратить stamina.
+/// </summary>
 public class animationgrif : MonoBehaviour
 {
+    // Два визуальных состояния грифа: лежит на стойке или находится в руках/активной анимации.
     public GameObject stategrif;
     public GameObject activegrif;
 
     public Animator anim;
-    public gameLogic logi;
 
+    // Главная игровая логика, через нее проверяется stamina и обновляются статы.
+    public gameLogic logi;
+/// <summary>
+/// Состояние обучения ограничивает, что можно сделать кликом:
+/// Locked - тренировка закрыта, CanTrain - можно начать, CanStop - двойной клик остановит тренировку.
+/// </summary>
     public enum TutorState
     {
         Locked,
@@ -21,8 +32,10 @@ public class animationgrif : MonoBehaviour
 
     public bool isPlaying = false;
 
+    // count определяет, какую анимацию запускать: первый клик - подход к грифу, следующие - повторы.
     public int count = 0;
 
+    // time/needtime используются для распознавания двойного клика.
     public float time;
     public float needtime = 0.4f;
 
@@ -34,6 +47,7 @@ public class animationgrif : MonoBehaviour
 
     void Start()
     {
+        // В начале гриф лежит на стойке, активная версия скрыта.
         stategrif.SetActive(true);
         activegrif.SetActive(false);
 
@@ -46,12 +60,13 @@ public class animationgrif : MonoBehaviour
 
         if (!logi.Panel.activeSelf)
         {
+            // После окончания обучения обычная тренировка всегда доступна, если хватает stamina.
             state = TutorState.CanTrain;
         }
 
         if (Time.time - time <= needtime && state == TutorState.CanStop)
         {
-           
+            // Во время обучения двойной клик завершает тренировку и запускает уход от грифа.
             logi.StaminaUU.SetActive(false);
 
             StopBenchAnimation();
@@ -59,7 +74,7 @@ public class animationgrif : MonoBehaviour
             stopCoroutine = StartCoroutine(FinishUpCoroutine());
         }
         else if(!logi.Panel.activeSelf &&Time.time - time <= needtime){
-        
+            // После обучения двойной клик тоже используется как остановка текущей серии.
             StopBenchAnimation();
 
             stopCoroutine = StartCoroutine(FinishUpCoroutine());
@@ -78,19 +93,19 @@ public class animationgrif : MonoBehaviour
 
         if (state == TutorState.Locked)
         {
-           
+            // Пока TutorUI не разрешил тренировку, клики игнорируются.
             return;
         }
 
         if (logi.stamina <= 0)
         {
-            
+            // gameLogic восстановит stamina через таймер, здесь только запрещаем старт анимации.
             return;
         }
 
         if (isPlaying)
         {
-         
+            // Не даем наложить одну тренировочную анимацию на другую.
             return;
         }
 
@@ -109,6 +124,7 @@ public class animationgrif : MonoBehaviour
 
         if (count == 1)
         {
+            // Первый клик подводит персонажа к грифу без начисления тренировки.
             anim.Play("walk to grif");
         }
         else if (count == 2)
@@ -120,6 +136,7 @@ public class animationgrif : MonoBehaviour
             yield return new WaitForSeconds(pauseBeforeSecondAnim / 2);
 
             anim.CrossFade("bench up_001", 0.4f, 0, 0f);
+            // Повтор засчитывается в gameLogic: сила растет, stamina уменьшается, UI обновляется.
             logi.Train();
         }
         else
@@ -131,9 +148,11 @@ public class animationgrif : MonoBehaviour
             yield return new WaitForSeconds(pauseBeforeSecondAnim / 2);
 
             anim.CrossFade("bench up_002", 0.65f, 0, 0f);
+            // Все следующие повторы используют другую анимацию, но ту же игровую логику тренировки.
             logi.Train();
         }
 
+        // Синхронизируем UI даже после первого подхода к грифу.
         logi.Updates();
 
         yield return new WaitForSeconds(secondAnimLength);
@@ -149,6 +168,7 @@ public class animationgrif : MonoBehaviour
 
         isPlaying = true;
 
+        // Завершение серии: персонаж кладет гриф, уходит, stamina UI скрывается.
         take();
         logi.StaminaUU.SetActive(false);
         anim.CrossFade("finishUp", 0.2f, 0, 0f);
@@ -166,6 +186,7 @@ public class animationgrif : MonoBehaviour
         count = 0;
         isPlaying = false;
 
+        // После ухода нужен новый разрешающий шаг/клик для старта следующей серии.
         state = TutorState.Locked;
 
     }
@@ -188,6 +209,7 @@ public class animationgrif : MonoBehaviour
     {
       
 
+        // Переключаем модель грифа из состояния "на стойке" в активное состояние.
         stategrif.SetActive(false);
         activegrif.SetActive(true);
     }
@@ -195,6 +217,7 @@ public class animationgrif : MonoBehaviour
     public void notake()
     {
 
+        // Возвращаем гриф на стойку после завершения анимации.
         stategrif.SetActive(true);
         activegrif.SetActive(false);
     }

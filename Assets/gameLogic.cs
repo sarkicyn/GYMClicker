@@ -4,54 +4,84 @@ using TMPro;
 using UnityEngine.UI;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
+
+/// <summary>
+/// Центральный скрипт проекта: хранит характеристики игрока, stamina, уровень,
+/// состояние обучения и ссылки на основные элементы UI.
+/// animationgrif вызывает Train(), fadeScript показывает обучение,
+/// FadeText и recordText отвечают за короткие текстовые эффекты.
+/// </summary>
 public class gameLogic : MonoBehaviour
 {
+    // Основные характеристики игрока, которые меняются во время тренировки.
     public int strength = 0;
 
     public int stamina = 100;
     public int maxStamina = 100;
+
+    // Основная шкала прогресса и ее учебная копия для стартовой панели.
     public Slider progressBar;
     public GameObject progressContainer;
     public GameObject progressContainer1;
     public Slider progressBar1;
+
+    // Основной stamina UI после обучения.
     public Slider Stamina;
     public GameObject StaminaUI;
     public int level = 1;
     public int powerPoints = 0;
     public TextMeshProUGUI checkLevel;
+
+    // Если train false, animationgrif может проиграть анимацию, но Train() не начислит прогресс.
     public bool train = true;
+
+    // Эффект крупного сообщения, например "новый уровень!".
     public recordText record;
+
+    // Время, когда stamina закончилась; Update использует его для восстановления через 10 секунд.
     public float staminaTime;
+
+    // Panel активна во время обучения. По ней другие скрипты понимают, идет tutorial или обычная игра.
     public GameObject Panel;
     public TextMeshProUGUI statsText;
     public TextMeshProUGUI statsText1;
     public TextMeshProUGUI textNew;
     public TextMeshProUGUI TutorText;
     public int countTutor= 0 ;
+
+    // fadeScript печатает сообщения из tutorMessage и вызывает TutorUI.CheckTutor().
     public fadeScript fade;
     bool tutorialRunning = false;
     public float targetValue = 100f;
+
+    // Учебная stamina UI, которая показывается только на стартовой панели.
     public GameObject StaminaUU;
     public Slider stamina2;
+
+    // target/light используются обучением для подсветки объекта тренировки.
     public GameObject target;
     public Light light;
     public string messageList;
     public positionTutor pos;
+
+    // Последовательность обучения. Некоторые строки распознаются TutorUI и включают новые возможности.
     public List<string> tutorMessage = new List<string>()
 {
-    "������,���������",
-    "�� �������� � �����,��� �� ���� ������� �������",
-    "��� ���� ����������",
-    "������ �� ������ ��� ����������",
-    "����� �� ������ ������������.��� ����������������� � ������� 10 ������ ����� �����������",
-    "����� ���������� ���������� ������ ������ �� �������"
+    "привет,новенький",
+    "ты оказался в месте,где из тебя сделают мужчину",
+    "это твоя статистика",
+    "кликни на объект для тренировки",
+    "следи за шкалой выносливости.Она восстанавливается в течении 10 секунд после изнеможения",
+    "чтобы прекратить тренировку кликни дважды по объекту"
 };
     public Transform canv;
 
+    // Количество активных всплывающих сообщений; нужно, чтобы новые сообщения смещались вниз.
     private int messageCount = 0;
 
     public void Start()
     {
+        // Стартуем с tutorial-панели: обычный игровой UI скрыт, тренировка заблокирована.
         Panel.SetActive(true);
         train = false;    
         statsText.gameObject.SetActive(false);
@@ -65,6 +95,7 @@ public class gameLogic : MonoBehaviour
         progressContainer.gameObject.SetActive(false);
         if (Panel.activeSelf)
         {
+            // Запускаем асинхронную цепочку обучающих сообщений.
             ShowTutorMessages();
         }
         Updates();
@@ -77,16 +108,19 @@ public class gameLogic : MonoBehaviour
         {
             if (Time.time - staminaTime >= 10f)
             {
+                // После полного истощения stamina восстанавливается один раз через 10 секунд.
                 stamina = maxStamina;
                 Stamina.maxValue = maxStamina;
                 Stamina.value = stamina;
                 train = true;
 
-                ShowMessage("�� ��������������!");
+                ShowMessage("вы восстановились!");
 
                 Updates();
             }
         }
+
+        // Одна и та же подпись уровня работает и для tutorial UI, и для основного UI.
         checkLevel.text = Panel.activeSelf
     ? $"{progressBar1.value}/{progressBar1.maxValue}"
     : $"{progressBar.value}/{progressBar.maxValue}";
@@ -97,16 +131,19 @@ public class gameLogic : MonoBehaviour
     {
         if (!train)
         {
-            ShowMessage("������ �������������");
+            // Например, обучение еще не дошло до шага, где тренировка разрешена.
+            ShowMessage("нельзя тренироваться");
             return;
         }
+
+        // Один успешный повтор увеличивает силу и очки.
         strength += 10;
         powerPoints += 5;
 
         CheckLevelUp();
         if (Panel.activeSelf)
         {
-            
+            // Во время обучения используем отдельную stamina-шкалу.
             StaminaUU.SetActive(true);
             stamina -= 20;
             stamina2.maxValue = maxStamina;
@@ -115,7 +152,8 @@ public class gameLogic : MonoBehaviour
         }
         if (!Panel.activeSelf)
         {
-        StaminaUI.SetActive(true);
+            // После обучения используем основной stamina UI.
+            StaminaUI.SetActive(true);
             stamina -= 20;
             Stamina.maxValue = maxStamina;
             Stamina.value = stamina;
@@ -123,11 +161,12 @@ public class gameLogic : MonoBehaviour
 
         if (stamina <= 0)
         {
+            // Блокируем дальнейшие тренировки до восстановления в Update().
             stamina = 0;
             train = false;
             staminaTime = Time.time;
 
-            ShowMessage("���� ���������, ��������� 10 ������");
+            ShowMessage("силы кончились, подождите 10 секунд");
             
         }
 
@@ -142,7 +181,8 @@ public class gameLogic : MonoBehaviour
         {
             level++;
 
-            record.Play("����� �������!");
+            // recordText показывает отдельный визуальный эффект поверх обычных всплывающих сообщений.
+            record.Play("новый уровень!");
         }
     }
 
@@ -150,6 +190,7 @@ public class gameLogic : MonoBehaviour
     {
 
 
+            // Создаем отдельный экземпляр текста, чтобы несколько сообщений могли жить одновременно.
             TextMeshProUGUI newText = Instantiate(textNew, canv);
 
             newText.text = message;
@@ -168,6 +209,7 @@ public class gameLogic : MonoBehaviour
 
             if (newText.GetComponent<FadeText>() == null)
             {
+                // FadeText сам уничтожит этот текст после плавного исчезновения.
                 newText.gameObject.AddComponent<FadeText>();
             }
 
@@ -179,6 +221,7 @@ public class gameLogic : MonoBehaviour
     {
         yield return new WaitForSeconds(4f);
 
+        // Освобождаем место в "стеке" сообщений после исчезновения текста.
         messageCount--;
 
         if (messageCount < 0)
@@ -191,6 +234,7 @@ public class gameLogic : MonoBehaviour
     {
         tutorialRunning = true;
 
+        // fadeScript печатает каждую фразу и параллельно через TutorUI включает нужные элементы обучения.
         for (int i = 0; i < tutorMessage.Count; i++)
         {
             //  pos.Position(TutorText, tutorMessage[i]);
@@ -201,6 +245,7 @@ public class gameLogic : MonoBehaviour
 
         await UniTask.Delay(2000);
 
+        // После обучения переключаем интерфейс с учебного состояния на обычную игру.
         Panel.SetActive(false);
         light.gameObject.SetActive(false);
         StaminaUU.SetActive(false);
@@ -217,6 +262,7 @@ public class gameLogic : MonoBehaviour
     }
     public void Updates()
     {
+        // Формула прогресса уровня: чем выше level, тем больше strength нужно до следующего уровня.
         int needStrength =
         level * 100 + level * level * 25; 
 
@@ -241,6 +287,7 @@ strength - previousNeedStrength;
         progressBar1.maxValue = needStrength - previousNeedStrength;
        
 
+        // Обновляем оба блока статистики, чтобы tutorial UI и основной UI показывали одинаковые значения.
         statsText1.text = $@"
 Level: {level}
 Strength: {strength}

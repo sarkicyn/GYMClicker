@@ -2,6 +2,11 @@ using System.Collections;
 using TMPro;
 using UnityEngine;
 
+/// <summary>
+/// Отдельный эффект для важных сообщений, например повышения уровня.
+/// gameLogic.CheckLevelUp() вызывает Play("новый уровень!"),
+/// после чего текст появляется, немного трясется и плавно исчезает.
+/// </summary>
 public class recordText : MonoBehaviour
 {
     public TextMeshProUGUI text;
@@ -14,6 +19,7 @@ public class recordText : MonoBehaviour
 
     void Start()
     {
+        // Запоминаем исходную позицию, чтобы после shake/fade вернуть текст на место.
         startPos = text.rectTransform.anchoredPosition;
 
         text.enabled = false;
@@ -21,6 +27,7 @@ public class recordText : MonoBehaviour
 
     public void Play(string message)
     {
+        // Новый важный текст прерывает старый эффект, чтобы сообщения не накладывались друг на друга.
         StopAllCoroutines();
 
         text.text = message;
@@ -43,7 +50,7 @@ public class recordText : MonoBehaviour
 
         float timer = 0f;
 
-        // ===== ��������� =====
+        // Появление: текст вырастает от нуля до нормального размера.
         while (timer < appearTime)
         {
             timer += Time.deltaTime;
@@ -63,7 +70,7 @@ public class recordText : MonoBehaviour
 
         timer = 0f;
 
-        // ===== ������ =====
+        // Короткое удержание с небольшим shake-эффектом.
         while (timer < stayTime)
         {
             timer += Time.deltaTime;
@@ -79,7 +86,7 @@ public class recordText : MonoBehaviour
 
         timer = 0f;
 
-        // ===== ������������ =====
+        // Исчезновение: текст становится прозрачным и слегка увеличивается.
         while (timer < fadeTime)
         {
             timer += Time.deltaTime;
@@ -100,6 +107,7 @@ public class recordText : MonoBehaviour
 
         text.enabled = false;
 
+        // Сбрасываем трансформации, чтобы следующий Play стартовал из чистого состояния.
         rect.localScale = Vector3.one;
         rect.anchoredPosition = startPos;
     }
