@@ -61,6 +61,7 @@ public class gameLogic : MonoBehaviour
     // target/light используются обучением для подсветки объекта тренировки.
     public GameObject target;
     public Light light;
+    public GameObject lightCont;
     public string messageList;
     public positionTutor pos;
 
@@ -93,6 +94,11 @@ public class gameLogic : MonoBehaviour
         progressContainer1.gameObject.SetActive(false);
         checkLevel.gameObject.SetActive(false);
         progressContainer.gameObject.SetActive(false);
+         stamina2.maxValue = maxStamina;
+          Stamina.maxValue = maxStamina;
+          stamina2.value = stamina;
+           Stamina.value = stamina;
+           lightCont.SetActive(true);
         if (Panel.activeSelf)
         {
             // Запускаем асинхронную цепочку обучающих сообщений.
@@ -145,14 +151,16 @@ public class gameLogic : MonoBehaviour
         {
             // Во время обучения используем отдельную stamina-шкалу.
             StaminaUU.SetActive(true);
+           
             stamina -= 20;
-            stamina2.maxValue = maxStamina;
+              stamina2.maxValue = maxStamina;
             stamina2.value = stamina;
            
         }
         if (!Panel.activeSelf)
         {
             // После обучения используем основной stamina UI.
+            Stamina.maxValue = maxStamina;
             StaminaUI.SetActive(true);
             stamina -= 20;
             Stamina.maxValue = maxStamina;
@@ -288,7 +296,7 @@ strength - previousNeedStrength;
        
 
         // Обновляем оба блока статистики, чтобы tutorial UI и основной UI показывали одинаковые значения.
-        statsText1.text = $@"
+            statsText1.text = $@"
 Level: {level}
 Strength: {strength}
 Power Points: {powerPoints}

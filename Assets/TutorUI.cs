@@ -2,6 +2,7 @@ using System.Collections;
 using UnityEngine;
 using TMPro;
 using Cysharp.Threading.Tasks;
+using System.Threading.Tasks;
 
 /// <summary>
 /// Реагирует на конкретные сообщения обучения.
@@ -20,7 +21,7 @@ public class TutorUI : MonoBehaviour
     public Coroutine tutorCoroutine;
 
 
-    public void  CheckTutor(string message)
+    public async Task  CheckTutor(string message)
     {
 
 
@@ -56,6 +57,7 @@ public class TutorUI : MonoBehaviour
         else if (message == "чтобы прекратить тренировку кликни дважды по объекту")
         {
             // Следующий двойной клик по объекту тренировки будет воспринят как команда остановиться.
+            await Task.Delay(1000);
             Anime.state = animationgrif.TutorState.CanStop;
             
         }

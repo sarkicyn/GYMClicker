@@ -53,21 +53,30 @@ public class animationgrif : MonoBehaviour
 
     
     }
-
-    public void OnMouseDown()
+public void Update()
     {
-        
-
+        if (state == TutorState.CanStop)
+        {
+         
+            StopBenchAnimation();
+   
+        }
         if (!logi.Panel.activeSelf)
         {
             // После окончания обучения обычная тренировка всегда доступна, если хватает stamina.
             state = TutorState.CanTrain;
         }
+    }
+    public void OnMouseDown()
+    {
+        
+
 
         if (Time.time - time <= needtime && state == TutorState.CanStop)
         {
             // Во время обучения двойной клик завершает тренировку и запускает уход от грифа.
-            logi.StaminaUU.SetActive(false);
+                    logi.StaminaUU.SetActive(false);
+        
 
             StopBenchAnimation();
 
@@ -75,6 +84,8 @@ public class animationgrif : MonoBehaviour
         }
         else if(!logi.Panel.activeSelf &&Time.time - time <= needtime){
             // После обучения двойной клик тоже используется как остановка текущей серии.
+                logi.StaminaUU.SetActive(false);
+        logi.StaminaUI.SetActive(false);
             StopBenchAnimation();
 
             stopCoroutine = StartCoroutine(FinishUpCoroutine());
@@ -170,7 +181,6 @@ public class animationgrif : MonoBehaviour
 
         // Завершение серии: персонаж кладет гриф, уходит, stamina UI скрывается.
         take();
-        logi.StaminaUU.SetActive(false);
         anim.CrossFade("finishUp", 0.2f, 0, 0f);
 
         yield return new WaitForSeconds(1f);
@@ -178,8 +188,6 @@ public class animationgrif : MonoBehaviour
         notake();
 
         anim.CrossFade("move away", 0.2f, 0, 0f);
-
-        logi.StaminaUI.SetActive(false);
 
         yield return new WaitForSeconds(1f);
 
