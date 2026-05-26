@@ -39,7 +39,7 @@ public class animationgrif : MonoBehaviour
     public float time;
     public float needtime = 0.4f;
 
-    public float pauseBeforeSecondAnim = 1f;
+    public float pauseBeforeSecondAnim = 0.5f;
     public float secondAnimLength = 2f;
 
     public Coroutine benchCoroutine;
@@ -55,6 +55,7 @@ public class animationgrif : MonoBehaviour
     }
 public void Update()
     {
+   
         if (state == TutorState.CanStop)
         {
          
@@ -79,21 +80,31 @@ public void Update()
         
 
             StopBenchAnimation();
+            
 
             stopCoroutine = StartCoroutine(FinishUpCoroutine());
+  logi.exer = "none exercise";
+logi.exercise.gameObject.SetActive(false);
+
         }
         else if(!logi.Panel.activeSelf &&Time.time - time <= needtime){
             // После обучения двойной клик тоже используется как остановка текущей серии.
                 logi.StaminaUU.SetActive(false);
         logi.StaminaUI.SetActive(false);
             StopBenchAnimation();
-
+logi.exer = "none exercise";
+logi.exercise.gameObject.SetActive(false);
+ logi.Updates();
             stopCoroutine = StartCoroutine(FinishUpCoroutine());
-        
         }
         else
         {
+        
             Player();
+            
+          logi.exercise.gameObject.SetActive(true);
+       logi.exer = "Barbell bicep curl";
+       logi.Updates();
         }
         time = Time.time;
     }
@@ -101,7 +112,6 @@ public void Update()
     public void Player()
     {
         
-
         if (state == TutorState.Locked)
         {
             // Пока TutorUI не разрешил тренировку, клики игнорируются.
@@ -120,7 +130,6 @@ public void Update()
             return;
         }
 
-      
 
         benchCoroutine = StartCoroutine(PlayBenchAnimation());
     }
@@ -176,18 +185,17 @@ public void Update()
     IEnumerator FinishUpCoroutine()
     {
 
-
         isPlaying = true;
 
         // Завершение серии: персонаж кладет гриф, уходит, stamina UI скрывается.
         take();
-        anim.CrossFade("finishUp", 0.2f, 0, 0f);
+        anim.CrossFade("finishUp", 0.2f, 0, 0.1f);
 
-        yield return new WaitForSeconds(1f);
+          yield return new WaitForSeconds(1f);
 
         notake();
 
-        anim.CrossFade("move away", 0.2f, 0, 0f);
+        anim.CrossFade("move away",0.2f,0,0.1f);
 
         yield return new WaitForSeconds(1f);
 
@@ -203,11 +211,10 @@ public void Update()
     {
        
 
-        if (benchCoroutine != null)
-        {
+        if (benchCoroutine != null){
             StopCoroutine(benchCoroutine);
             benchCoroutine = null;
-
+    
         }
 
         isPlaying = false;

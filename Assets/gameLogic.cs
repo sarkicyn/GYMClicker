@@ -4,6 +4,7 @@ using TMPro;
 using UnityEngine.UI;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
+using System.Threading.Tasks;
 
 /// <summary>
 /// Центральный скрипт проекта: хранит характеристики игрока, stamina, уровень,
@@ -64,6 +65,11 @@ public class gameLogic : MonoBehaviour
     public GameObject lightCont;
     public string messageList;
     public positionTutor pos;
+    public animationgrif anim;
+public TextMeshProUGUI exercise;
+public string exer;
+public int Weight=20;
+
 
     // Последовательность обучения. Некоторые строки распознаются TutorUI и включают новые возможности.
     public List<string> tutorMessage = new List<string>()
@@ -81,9 +87,10 @@ public class gameLogic : MonoBehaviour
     private int messageCount = 0;
 
     public void Start()
-    {
+    {  
         // Стартуем с tutorial-панели: обычный игровой UI скрыт, тренировка заблокирована.
         Panel.SetActive(true);
+    exercise.gameObject.SetActive(false);
         train = false;    
         statsText.gameObject.SetActive(false);
         textNew.gameObject.SetActive(false);
@@ -110,17 +117,17 @@ public class gameLogic : MonoBehaviour
 
     void Update()
     {
+        
         if (stamina <= 0)
         {
-            if (Time.time - staminaTime >= 10f)
+            if (Time.time - staminaTime >= 1f)
             {
                 // После полного истощения stamina восстанавливается один раз через 10 секунд.
-                stamina = maxStamina;
-                Stamina.maxValue = maxStamina;
+                Recover();
                 Stamina.value = stamina;
-                train = true;
+                Stamina.maxValue = maxStamina;
 
-                ShowMessage("вы восстановились!");
+              
 
                 Updates();
             }
@@ -131,6 +138,18 @@ public class gameLogic : MonoBehaviour
     ? $"{progressBar1.value}/{progressBar1.maxValue}"
     : $"{progressBar.value}/{progressBar.maxValue}";
 
+    }
+        public async Task Recover()     
+    {
+        while (stamina != 100)
+        {
+            stamina+=20;
+            await Task.Delay(2000);
+            Stamina.value= stamina;
+            Updates();
+        }
+                train = true;
+                  ShowMessage("вы восстановились!");
     }
 
     public void Train()
@@ -269,7 +288,10 @@ public class gameLogic : MonoBehaviour
         tutorialRunning = false;
     }
     public void Updates()
-    {
+    {exercise.text = 
+    $@"{exer}
+    weight:{Weight}
+    ";
         // Формула прогресса уровня: чем выше level, тем больше strength нужно до следующего уровня.
         int needStrength =
         level * 100 + level * level * 25; 
@@ -301,6 +323,7 @@ Level: {level}
 Strength: {strength}
 Power Points: {powerPoints}
 Stamina: {stamina}/{maxStamina}
+
 ";
 
 
@@ -309,6 +332,7 @@ Level: {level}
 Strength: {strength}
 Power Points: {powerPoints}
 Stamina: {stamina}/{maxStamina}
+
 ";
     }
 }
