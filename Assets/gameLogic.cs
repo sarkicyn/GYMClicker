@@ -66,9 +66,12 @@ public class gameLogic : MonoBehaviour
     public string messageList;
     public positionTutor pos;
     public animationgrif anim;
+  
+    public GameObject PanelSettings; 
 public TextMeshProUGUI exercise;
 public string exer;
 public int Weight=20;
+public Button settings;
 
 
     // Последовательность обучения. Некоторые строки распознаются TutorUI и включают новые возможности.
@@ -89,6 +92,9 @@ public int Weight=20;
     public void Start()
     {  
         // Стартуем с tutorial-панели: обычный игровой UI скрыт, тренировка заблокирована.
+        settings.onClick.AddListener(SettingsOpen);
+      
+        PanelSettings.gameObject.SetActive(false);
         Panel.SetActive(true);
     exercise.gameObject.SetActive(false);
         train = false;    
@@ -141,6 +147,7 @@ public int Weight=20;
     }
         public async Task Recover()     
     {
+        await Task.Delay(1000);
         while (stamina != 100)
         {
             stamina+=20;
@@ -334,5 +341,10 @@ Power Points: {powerPoints}
 Stamina: {stamina}/{maxStamina}
 
 ";
+    }
+    public void SettingsOpen()
+    {
+train =false;
+PanelSettings.gameObject.SetActive(true);
     }
 }
