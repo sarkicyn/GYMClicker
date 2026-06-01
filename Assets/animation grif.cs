@@ -1,26 +1,26 @@
 using System.Collections;
-using Unity.VisualScripting.Antlr3.Runtime;
 using UnityEngine;
 
-/// <summary>
-/// Управляет кликами по объекту тренировки и анимациями грифа.
-/// Скрипт получает разрешение на тренировку от TutorUI/gameLogic,
-/// а при успешном повторении вызывает gameLogic.Train(), чтобы начислить прогресс и потратить stamina.
-/// </summary>
 public class animationgrif : MonoBehaviour
 {
-    // Два визуальных состояния грифа: лежит на стойке или находится в руках/активной анимации.
     public GameObject stategrif;
     public GameObject activegrif;
-
     public Animator anim;
-
-    // Главная игровая логика, через нее проверяется stamina и обновляются статы.
     public gameLogic logi;
-/// <summary>
-/// Состояние обучения ограничивает, что можно сделать кликом:
-/// Locked - тренировка закрыта, CanTrain - можно начать, CanStop - двойной клик остановит тренировку.
-/// </summary>
+
+    public Camera clickCamera;
+
+    public TutorState state = TutorState.Locked;
+    public bool isPlaying;
+    public int count;
+
+    public float time;
+    public float needtime = 0.4f;
+    public float pauseBeforeSecondAnim = 0.5f;
+    public float secondAnimLength = 2f;
+
+    private Coroutine benchCoroutine;
+
     public enum TutorState
     {
         Locked,
@@ -28,193 +28,181 @@ public class animationgrif : MonoBehaviour
         CanStop
     }
 
-    public TutorState state = TutorState.Locked;
-
-    public bool isPlaying = false;
-
-    // count определяет, какую анимацию запускать: первый клик - подход к грифу, следующие - повторы.
-    public int count = 0;
-
-    // time/needtime используются для распознавания двойного клика.
-    public float time;
-    public float needtime = 0.4f;
-
-    public float pauseBeforeSecondAnim = 0.5f;
-    public float secondAnimLength = 2f;
-
-    public Coroutine benchCoroutine;
-    public Coroutine stopCoroutine;
-
     void Start()
     {
-        // В начале гриф лежит на стойке, активная версия скрыта.
-        stategrif.SetActive(true);
-        activegrif.SetActive(false);
-
-    
+        stategrif?.SetActive(true);
+        activegrif?.SetActive(false);
     }
-public void Update()
+
+    void Update()
     {
-   
-        if (state == TutorState.CanStop)
+        // if (logi?.Panel != null && !logi.Panel.activeSelf)
+        // {
+        //     state = TutorState.CanTrain;
+        // }
+       
+        if (TryGetClickPosition(out Vector2 position) && HitsBarbell(position))///если вызванные методы вернут true то вызываем метод анимации
         {
-         
-            StopBenchAnimation();
-   
-        }
-        if (!logi.Panel.activeSelf)
-        {
-            // После окончания обучения обычная тренировка всегда доступна, если хватает stamina.
-            state = TutorState.CanTrain;
+            OnBarbellClick();
         }
     }
-    public void OnMouseDown()
+
+    private bool TryGetClickPosition(out Vector2 position)//передаем переменную позиции,которую заполняем в методе
     {
-        
-
-
-        if (Time.time - time <= needtime && state == TutorState.CanStop)
+        if (Input.GetMouseButtonDown(0))///проверяем был клик для МЫШИ и заипсываем кооординаты
         {
-            // Во время обучения двойной клик завершает тренировку и запускает уход от грифа.
-                    logi.StaminaUU.SetActive(false);
-        
-
-            StopBenchAnimation();
-            
-
-            stopCoroutine = StartCoroutine(FinishUpCoroutine());
-  logi.exer = "none exercise";
-logi.exercise.gameObject.SetActive(false);
-
+            position = Input.mousePosition;///назначаем переменную позициии клика
+            return true;
         }
-        else if(!logi.Panel.activeSelf &&Time.time - time <= needtime){
-            // После обучения двойной клик тоже используется как остановка текущей серии.
-                logi.StaminaUU.SetActive(false);
-        logi.StaminaUI.SetActive(false);
-            StopBenchAnimation();
-logi.exer = "none exercise";
-logi.exercise.gameObject.SetActive(false);
- logi.Updates();
-            stopCoroutine = StartCoroutine(FinishUpCoroutine());
+
+        if (Input.touchCount > 0 && Input.GetTouch(0).phase == TouchPhase.Began)/// проверяем был ли таб по экрану пальцем для мобилки
+        {
+            position = Input.GetTouch(0).position;///назначаем переменную позициии клика для мобилы 
+            return true;
+        }
+
+        position = default; ///не было клика/касания = значения дефолт
+        return false;
+    }
+
+    private bool HitsBarbell(Vector2 position)
+    {
+        return clickCamera != null && HitsBarbellFromCamera(clickCamera, position); ///проверям если камера назначена верно и метод возвращает true
+    }
+
+    private bool HitsBarbellFromCamera(Camera cameraToCheck, Vector2 position) //принимает в качестве аргумента объект камеры и позицию клика 
+    {
+        RaycastHit[] hits = Physics.RaycastAll( //создаем массив попаданий луча
+            cameraToCheck.ScreenPointToRay(position),
+            Mathf.Infinity,
+            Physics.DefaultRaycastLayers,
+            QueryTriggerInteraction.Collide);
+
+            foreach (RaycastHit hit in hits) ///проверяем каждое попадание луча на то,чтобы попадание было совершено на объекты стойки грифа
+            {
+                Transform hitTransform = hit.transform;
+
+                if (IsSameOrRelated(hitTransform, stategrif?.transform) ||  
+                    IsSameOrRelated(hitTransform, activegrif?.transform) ||
+                    IsSameOrRelated(hitTransform, transform))
+                {
+                    return true;
+                }
+        }
+
+        return false;
+    }
+
+    private bool IsSameOrRelated(Transform hit, Transform root)
+    {
+        return hit != null &&
+               root != null &&
+               (hit == root);
+    }
+
+    public void OnBarbellClick()    
+    {
+        bool doubleClick = Time.time - time <= needtime;
+        bool canStop = state == TutorState.CanStop || (logi?.Panel != null && !logi.Panel.activeSelf);
+
+        if (doubleClick && canStop)
+        {
+            StopTraining();
         }
         else
         {
-        
-            Player();
-            
-          logi.exercise.gameObject.SetActive(true);
-       logi.exer = "Barbell bicep curl";
-       logi.Updates();
+            StartTraining();
         }
+
         time = Time.time;
     }
 
-    public void Player()
+    private void StartTraining()
     {
-        
-        if (state == TutorState.Locked)
+        if (state == TutorState.Locked || isPlaying || (logi != null && logi.stamina <= 0))
         {
-            // Пока TutorUI не разрешил тренировку, клики игнорируются.
             return;
         }
 
-        if (logi.stamina <= 0)
-        {
-            // gameLogic восстановит stamina через таймер, здесь только запрещаем старт анимации.
-            return;
-        }
+        logi?.exercise?.gameObject.SetActive(true);
 
-        if (isPlaying)
+        if (logi != null)
         {
-            // Не даем наложить одну тренировочную анимацию на другую.
-            return;
+            logi.exer = "Barbell bicep curl";
+            logi.Updates();
         }
-
 
         benchCoroutine = StartCoroutine(PlayBenchAnimation());
     }
 
-    IEnumerator PlayBenchAnimation()
+    private void StopTraining()
     {
+        logi?.StaminaUU?.SetActive(false);
+        logi?.StaminaUI?.SetActive(false);
+        logi?.exercise?.gameObject.SetActive(false);
 
+        if (logi != null)
+        {
+            logi.exer = "none exercise";
+            logi.Updates();
+        }
+
+        StopBenchAnimation();
+        StartCoroutine(FinishUpCoroutine());
+    }
+
+    private IEnumerator PlayBenchAnimation()
+    {
         isPlaying = true;
-
         count++;
-
 
         if (count == 1)
         {
-            // Первый клик подводит персонажа к грифу без начисления тренировки.
-            anim.Play("walk to grif");
-        }
-        else if (count == 2)
-        {
-           
-
-            take();
-
-            yield return new WaitForSeconds(pauseBeforeSecondAnim / 2);
-
-            anim.CrossFade("bench up_001", 0.4f, 0, 0f);
-            // Повтор засчитывается в gameLogic: сила растет, stamina уменьшается, UI обновляется.
-            logi.Train();
+            anim?.Play("walk to grif");
         }
         else
         {
-        
-
             take();
-
             yield return new WaitForSeconds(pauseBeforeSecondAnim / 2);
 
-            anim.CrossFade("bench up_002", 0.65f, 0, 0f);
-            // Все следующие повторы используют другую анимацию, но ту же игровую логику тренировки.
-            logi.Train();
+            anim?.CrossFade(count == 2 ? "bench up_001" : "bench up_002", count == 2 ? 0.4f : 0.65f, 0, 0f);
+            logi?.StaminaUI?.SetActive(true);
+            logi?.Train();
         }
 
-        // Синхронизируем UI даже после первого подхода к грифу.
-        logi.Updates();
+        logi?.Updates();
 
         yield return new WaitForSeconds(secondAnimLength);
 
         isPlaying = false;
         benchCoroutine = null;
-
     }
 
-    IEnumerator FinishUpCoroutine()
+    private IEnumerator FinishUpCoroutine()
     {
-
         isPlaying = true;
 
-        // Завершение серии: персонаж кладет гриф, уходит, stamina UI скрывается.
         take();
-        anim.CrossFade("finishUp", 0.2f, 0, 0.1f);
+        anim?.CrossFade("finishUp", 0.2f, 0, 0.1f);
 
-          yield return new WaitForSeconds(1f);
+        yield return new WaitForSeconds(1f);
 
         notake();
-
-        anim.CrossFade("move away",0.2f,0,0.1f);
+        anim?.CrossFade("move away", 0.2f, 0, 0.1f);
 
         yield return new WaitForSeconds(1f);
 
         count = 0;
         isPlaying = false;
-
-        // После ухода нужен новый разрешающий шаг/клик для старта следующей серии.
         state = TutorState.Locked;
-
     }
 
     public void StopBenchAnimation()
     {
-       
-
-        if (benchCoroutine != null){
+        if (benchCoroutine != null)
+        {
             StopCoroutine(benchCoroutine);
             benchCoroutine = null;
-    
         }
 
         isPlaying = false;
@@ -222,18 +210,13 @@ logi.exercise.gameObject.SetActive(false);
 
     public void take()
     {
-      
-
-        // Переключаем модель грифа из состояния "на стойке" в активное состояние.
-        stategrif.SetActive(false);
-        activegrif.SetActive(true);
+        stategrif?.SetActive(false);
+        activegrif?.SetActive(true);
     }
 
     public void notake()
     {
-
-        // Возвращаем гриф на стойку после завершения анимации.
-        stategrif.SetActive(true);
-        activegrif.SetActive(false);
+        stategrif?.SetActive(true);
+        activegrif?.SetActive(false);
     }
 }

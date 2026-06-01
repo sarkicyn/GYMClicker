@@ -11,8 +11,8 @@ public class recordText : MonoBehaviour
 {
     public TextMeshProUGUI text;
     public float appearTime = 0.25f;
-    public float stayTime = 0.2f;
-    public float fadeTime = 2f;
+    public float stayTime = 0.3f;
+    public float fadeTime = 3f;
     public float shakePower = 0.02f ;
 
     private Vector2 startPos;

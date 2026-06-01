@@ -5,6 +5,11 @@ using UnityEngine.UI;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using System.Threading.Tasks;
+using Unity.VisualScripting;
+using UnityEditor.SettingsManagement;
+using UnityEngine.EventSystems;
+using System.Threading;
+using Unity.VisualScripting.Antlr3.Runtime;
 
 /// <summary>
 /// Центральный скрипт проекта: хранит характеристики игрока, stamina, уровень,
@@ -71,15 +76,20 @@ public class gameLogic : MonoBehaviour
 public TextMeshProUGUI exercise;
 public string exer;
 public int Weight=20;
-public Button settings;
-
-
+public Button settingsBtn;
+public bool setting = false;
+public EventTrigger settingsTrigger;
+public CancellationTokenSource StopSet;
+public CancellationToken SetToken;
+public bool isPaused = false;
+public bool StaminaHill = false;
     // Последовательность обучения. Некоторые строки распознаются TutorUI и включают новые возможности.
     public List<string> tutorMessage = new List<string>()
 {
     "привет,новенький",
     "ты оказался в месте,где из тебя сделают мужчину",
     "это твоя статистика",
+    "это настройки игры",
     "кликни на объект для тренировки",
     "следи за шкалой выносливости.Она восстанавливается в течении 10 секунд после изнеможения",
     "чтобы прекратить тренировку кликни дважды по объекту"
@@ -89,55 +99,54 @@ public Button settings;
     // Количество активных всплывающих сообщений; нужно, чтобы новые сообщения смещались вниз.
     private int messageCount = 0;
 
-    public void Start()
-    {  
-        // Стартуем с tutorial-панели: обычный игровой UI скрыт, тренировка заблокирована.
-        settings.onClick.AddListener(SettingsOpen);
-      
-        PanelSettings.gameObject.SetActive(false);
-        Panel.SetActive(true);
-    exercise.gameObject.SetActive(false);
-        train = false;    
-        statsText.gameObject.SetActive(false);
-        textNew.gameObject.SetActive(false);
-        StaminaUI.SetActive(false);
-        StaminaUU.SetActive(false);
-        light.gameObject.SetActive(false);
-        statsText1.gameObject.SetActive(false);
-        progressContainer1.gameObject.SetActive(false);
-        checkLevel.gameObject.SetActive(false);
-        progressContainer.gameObject.SetActive(false);
-         stamina2.maxValue = maxStamina;
-          Stamina.maxValue = maxStamina;
-          stamina2.value = stamina;
-           Stamina.value = stamina;
-           lightCont.SetActive(true);
-        if (Panel.activeSelf)
-        {
-            // Запускаем асинхронную цепочку обучающих сообщений.
-            ShowTutorMessages();
-        }
-        Updates();
+public void Start()
+{
+    StartCoroutine(ListenSettings());
+settingsBtn.gameObject.SetActive(false);
+    PanelSettings.gameObject.SetActive(false);
+    Panel.SetActive(true);
 
+    exercise.gameObject.SetActive(false);
+    train = false;
+
+    statsText.gameObject.SetActive(false);
+    textNew.gameObject.SetActive(false);
+    StaminaUI.SetActive(false);
+    StaminaUU.SetActive(false);
+    light.gameObject.SetActive(false);
+    statsText1.gameObject.SetActive(false);
+    progressContainer1.gameObject.SetActive(false);
+    checkLevel.gameObject.SetActive(false);
+    progressContainer.gameObject.SetActive(false);
+
+    stamina2.maxValue = maxStamina;
+    Stamina.maxValue = maxStamina;
+    stamina2.value = stamina;
+    Stamina.value = stamina;
+
+    lightCont.SetActive(true);
+
+    EventTrigger.Entry entry = new EventTrigger.Entry();
+    entry.eventID = EventTriggerType.PointerClick;
+
+    entry.callback.AddListener((d) =>
+    {
+        SettingsOpen();
+    });
+
+    settingsTrigger.triggers.Add(entry);
+
+    if (Panel.activeSelf)
+    {
+        ShowTutorMessages();
     }
 
+    Updates();
+}
+ 
     void Update()
     {
-        
-        if (stamina <= 0)
-        {
-            if (Time.time - staminaTime >= 1f)
-            {
-                // После полного истощения stamina восстанавливается один раз через 10 секунд.
-                Recover();
-                Stamina.value = stamina;
-                Stamina.maxValue = maxStamina;
-
-              
-
-                Updates();
-            }
-        }
+    
 
         // Одна и та же подпись уровня работает и для tutorial UI, и для основного UI.
         checkLevel.text = Panel.activeSelf
@@ -146,29 +155,43 @@ public Button settings;
 
     }
         public async Task Recover()     
-    {
-        await Task.Delay(1000);
-        while (stamina != 100)
-        {
+{   StaminaHill = true;
+anim.state= animationgrif.TutorState.Locked;
+        await Task.Delay(4000);
+              Stamina.maxValue = maxStamina;
+        while (stamina <maxStamina)
+        { 
             stamina+=20;
-            await Task.Delay(2000);
             Stamina.value= stamina;
+            if (stamina > maxStamina)
+            {
+                stamina =maxStamina;
+                break;
+            }
+            
             Updates();
+            await Task.Delay(2500);
+             
+              
         }
+        StaminaHill = false;
                 train = true;
                   ShowMessage("вы восстановились!");
+                  anim.state = animationgrif.TutorState.CanTrain;
     }
+    
 
-    public void Train()
+    public async Task Train()
     {
         if (!train)
         {
-            // Например, обучение еще не дошло до шага, где тренировка разрешена.
+            
             ShowMessage("нельзя тренироваться");
             return;
         }
 
         // Один успешный повтор увеличивает силу и очки.
+    
         strength += 10;
         powerPoints += 5;
 
@@ -177,7 +200,7 @@ public Button settings;
         {
             // Во время обучения используем отдельную stamina-шкалу.
             StaminaUU.SetActive(true);
-           
+           StaminaUI.SetActive(false);
             stamina -= 20;
               stamina2.maxValue = maxStamina;
             stamina2.value = stamina;
@@ -187,11 +210,12 @@ public Button settings;
         {
             // После обучения используем основной stamina UI.
             Stamina.maxValue = maxStamina;
+              StaminaUU.SetActive(false);
             StaminaUI.SetActive(true);
             stamina -= 20;
             Stamina.maxValue = maxStamina;
             Stamina.value = stamina;
-        }
+        }   
 
         if (stamina <= 0)
         {
@@ -201,7 +225,7 @@ public Button settings;
             staminaTime = Time.time;
 
             ShowMessage("силы кончились, подождите 10 секунд");
-            
+            await Recover();
         }
 
         Updates();
@@ -252,7 +276,7 @@ public Button settings;
     }
 
     IEnumerator RemoveMessageSlot()
-    {
+    {   
         yield return new WaitForSeconds(4f);
 
         // Освобождаем место в "стеке" сообщений после исчезновения текста.
@@ -266,12 +290,17 @@ public Button settings;
 
     public async UniTask ShowTutorMessages()
     {
+        StopSet = new CancellationTokenSource();
+        SetToken = StopSet.Token;
         tutorialRunning = true;
 
         // fadeScript печатает каждую фразу и параллельно через TutorUI включает нужные элементы обучения.
+      
         for (int i = 0; i < tutorMessage.Count; i++)
         {
             //  pos.Position(TutorText, tutorMessage[i]);
+             
+             await UniTask.Delay(10,cancellationToken:SetToken);
             await fade.Typing(TutorText, tutorMessage[i]);
 
             countTutor++;
@@ -286,10 +315,10 @@ public Button settings;
         statsText.gameObject.SetActive(true);
         statsText1.gameObject.SetActive(false);
         textNew.gameObject.SetActive(true);
-        StaminaUI.SetActive(true);
+        // StaminaUI.SetActive(true);
         progressContainer.gameObject.SetActive(true);
         progressContainer1.gameObject.SetActive(false);
-
+settingsBtn.gameObject.SetActive(true);
         train = true;
 
         tutorialRunning = false;
@@ -344,7 +373,31 @@ Stamina: {stamina}/{maxStamina}
     }
     public void SettingsOpen()
     {
-train =false;
-PanelSettings.gameObject.SetActive(true);
+        setting = !setting;
+
+PanelSettings.gameObject.SetActive(setting);
+        if (setting)
+        {
+            isPaused =true;
+        }
+        else
+        {
+            isPaused = false;   
+        }
     }
+ private IEnumerator ListenSettings()
+{
+    while (true)
+    {
+        if (PanelSettings.activeSelf)
+        {StopSet =new CancellationTokenSource();
+    SetToken= StopSet.Token;
+            StopSet.Cancel();
+            StopSet = new CancellationTokenSource();
+            SetToken = StopSet.Token;
+        }
+
+        yield return null;
+    }
+}
 }

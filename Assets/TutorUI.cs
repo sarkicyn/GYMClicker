@@ -2,6 +2,7 @@ using System.Collections;
 using UnityEngine;
 using TMPro;
 using Cysharp.Threading.Tasks;
+using JetBrains.Annotations;
 
 /// <summary>
 /// Реагирует на конкретные сообщения обучения.
@@ -10,48 +11,56 @@ using Cysharp.Threading.Tasks;
 /// </summary>
 public class TutorUI : MonoBehaviour
 {
-    // Центральная логика игры: хранит UI, статы, stamina и флаги обучения.
     public gameLogic logic;
 
-    // Скрипт объекта тренировки: TutorUI переводит его в состояние, где можно тренироваться или остановиться.
     public animationgrif Anime;
 
-    // Оставлено под возможное управление корутиной обучения из инспектора/другого скрипта.
     public Coroutine tutorCoroutine;
 
     public void CheckTutor(string message)
     {
         if (message == "это твоя статистика")
         {
-            // На этом шаге обучения показываем учебную версию блока статистики.
-            logic.statsText1.gameObject.SetActive(true);
-            logic.progressContainer1.gameObject.SetActive(true);
-            logic.checkLevel.gameObject.SetActive(true);
+            logic?.statsText1?.gameObject.SetActive(true);
+            logic?.progressContainer1?.gameObject.SetActive(true);
+            logic?.checkLevel?.gameObject.SetActive(true);
         }
+
         else if (message == "кликни на объект для тренировки")
         {
-            if (logic == null || logic.light == null || logic.target == null)
-            {
-                Debug.LogWarning("TutorUI: logic, light или target не назначены в инспекторе.");
-            }
-            else
-            {
-                // Подсветка ведет игрока к объекту, после чего animationgrif разрешает запуск тренировки.
-                logic.light.gameObject.SetActive(true);
+            if (logic?.light == null || logic?.target == null || Anime == null)
+                return;
 
-                logic.light.transform.position =
-                    new Vector3(3281.5f, 12f, 3675.857f);
+            logic.light.gameObject.SetActive(true);
 
-                Anime.state = animationgrif.TutorState.CanTrain;
+            logic.light.transform.position =
+                new Vector3(3281.5f, 12f, 3675.857f);
 
-                logic.train = true;
-                logic.StaminaUU.SetActive(true);
-            }
+            Anime.state = animationgrif.TutorState.CanTrain;
+
+            logic.train = true;
+
+            logic?.StaminaUU?.SetActive(true);
         }
+
         else if (message == "чтобы прекратить тренировку кликни дважды по объекту")
         {
-            // Следующий двойной клик по объекту тренировки будет воспринят как команда остановиться.
+            if (Anime == null)
+                return;
+
             Anime.state = animationgrif.TutorState.CanStop;
+        }
+        else if(message=="это настройки игры")
+        {
+            logic.settingsBtn.gameObject.SetActive(true);
+        }
+        
+    }
+    public void Update()
+    {
+        if (logic.isPaused)
+        {
+            return;
         }
     }
 }

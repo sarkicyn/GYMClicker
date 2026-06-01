@@ -2,6 +2,8 @@ using System.Collections;
 using TMPro;
 using UnityEngine;
 using Cysharp.Threading.Tasks;
+using System.Threading;
+using UnityEditor.Rendering;
 
 /// <summary>
 /// Печатает обучающие сообщения по буквам, удерживает их на экране и плавно скрывает.
@@ -18,11 +20,14 @@ public class fadeScript : MonoBehaviour
     public Coroutine typing;
     [Header("Fade settings")]
     public float fadeSpeed = 1f;
-
+public gameLogic logic;
     
 
-
     public async UniTask Typing(TextMeshProUGUI textUI, string message) {
+            while (logic.isPaused)
+    {
+        await UniTask.Yield();
+    }
         // Готовим TextMeshProUGUI к новому сообщению: показываем, возвращаем прозрачность и очищаем текст.
         textUI.gameObject.SetActive(true);
         Color color = textUI.color;
