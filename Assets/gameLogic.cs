@@ -57,7 +57,7 @@ public class gameLogic : MonoBehaviour
 
     // fadeScript печатает сообщения из tutorMessage и вызывает TutorUI.CheckTutor().
     public fadeScript fade;
-    bool tutorialRunning = false;
+    public bool tutorialRunning = false;
     public float targetValue = 100f;
 
     // Учебная stamina UI, которая показывается только на стартовой панели.
@@ -101,28 +101,8 @@ public bool StaminaHill = false;
 
 public void Start()
 {
-    StartCoroutine(ListenSettings());
-settingsBtn.gameObject.SetActive(false);
-    PanelSettings.gameObject.SetActive(false);
-    Panel.SetActive(true);
-
-    exercise.gameObject.SetActive(false);
-    train = false;
-
-    statsText.gameObject.SetActive(false);
-    textNew.gameObject.SetActive(false);
-    StaminaUI.SetActive(false);
-    StaminaUU.SetActive(false);
-    light.gameObject.SetActive(false);
-    statsText1.gameObject.SetActive(false);
-    progressContainer1.gameObject.SetActive(false);
-    checkLevel.gameObject.SetActive(false);
-    progressContainer.gameObject.SetActive(false);
-
-    stamina2.maxValue = maxStamina;
-    Stamina.maxValue = maxStamina;
-    stamina2.value = stamina;
-    Stamina.value = stamina;
+    // StartCoroutine(ListenSettings());
+   StartCoroutine(TutorActive());
 
     lightCont.SetActive(true);
 
@@ -136,12 +116,6 @@ settingsBtn.gameObject.SetActive(false);
 
     settingsTrigger.triggers.Add(entry);
 
-    if (Panel.activeSelf)
-    {
-        ShowTutorMessages();
-    }
-
-    Updates();
 }
  
     void Update()
@@ -290,6 +264,7 @@ anim.state= animationgrif.TutorState.Locked;
 
     public async UniTask ShowTutorMessages()
     {
+            Debug.Log("ShowTutorMessages CLICK");
         StopSet = new CancellationTokenSource();
         SetToken = StopSet.Token;
         tutorialRunning = true;
@@ -385,13 +360,13 @@ PanelSettings.gameObject.SetActive(setting);
             isPaused = false;   
         }
     }
- private IEnumerator ListenSettings()
+ public IEnumerator ListenSettings()
 {
     while (true)
     {
         if (PanelSettings.activeSelf)
-        {StopSet =new CancellationTokenSource();
-    SetToken= StopSet.Token;
+        {
+            
             StopSet.Cancel();
             StopSet = new CancellationTokenSource();
             SetToken = StopSet.Token;
@@ -400,4 +375,36 @@ PanelSettings.gameObject.SetActive(setting);
         yield return null;
     }
 }
+public IEnumerator TutorActive()
+    {
+         
+settingsBtn.gameObject.SetActive(false);
+    PanelSettings.gameObject.SetActive(false);
+    Panel.SetActive(true);
+
+    exercise.gameObject.SetActive(false);
+    train = false;
+
+    statsText.gameObject.SetActive(false);
+    textNew.gameObject.SetActive(false);
+    StaminaUI.SetActive(false);
+    StaminaUU.SetActive(false);
+    light.gameObject.SetActive(false);
+    statsText1.gameObject.SetActive(false);
+    progressContainer1.gameObject.SetActive(false);
+    checkLevel.gameObject.SetActive(false);
+    progressContainer.gameObject.SetActive(false);
+
+    stamina2.maxValue = maxStamina;
+    Stamina.maxValue = maxStamina;
+    stamina2.value = stamina;
+    Stamina.value = stamina;
+    
+    if (Panel.activeSelf)
+    {
+        yield return ShowTutorMessages();
+    }
+
+    Updates();
+    }
 }
