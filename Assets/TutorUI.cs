@@ -21,9 +21,9 @@ public class TutorUI : MonoBehaviour
     {
         if (message == "это твоя статистика")
         {
-            logic?.statsText1?.gameObject.SetActive(true);
-            logic?.progressContainer1?.gameObject.SetActive(true);
-            logic?.checkLevel?.gameObject.SetActive(true);
+            logic.statsText1.gameObject.SetActive(true);
+            logic.progressContainer1.gameObject.SetActive(true);
+            logic.checkLevel.gameObject.SetActive(true);
         }
 
         else if (message == "кликни на объект для тренировки")

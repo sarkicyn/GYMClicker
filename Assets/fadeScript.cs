@@ -4,6 +4,7 @@ using UnityEngine;
 using Cysharp.Threading.Tasks;
 using System.Threading;
 using UnityEditor.Rendering;
+using System.Threading.Tasks;
 
 /// <summary>
 /// Печатает обучающие сообщения по буквам, удерживает их на экране и плавно скрывает.
@@ -23,11 +24,15 @@ public class fadeScript : MonoBehaviour
 public gameLogic logic;
     
 
-    public async UniTask Typing(TextMeshProUGUI textUI, string message) {
-            while (logic.isPaused)
+    public async UniTask Typing(TextMeshProUGUI textUI, string message, CancellationToken token = default)
     {
-        await UniTask.Yield();
-    }
+        while (logic.isPaused)
+        {
+            await Task.Yield();
+        }
+       
+
+        // Debug.Log("текст печатается");
         // Готовим TextMeshProUGUI к новому сообщению: показываем, возвращаем прозрачность и очищаем текст.
         textUI.gameObject.SetActive(true);
         Color color = textUI.color;
@@ -42,19 +47,21 @@ public gameLogic logic;
         // Эффект печатной машинки: добавляем символы по одному.
         for (int i = 0; i < message.Length; i++)
         {
+            token.ThrowIfCancellationRequested();
             textUI.text += message[i];
-            await UniTask.Delay(50);
+            await UniTask.Delay(50, cancellationToken: token);
         }
 
         // Даем игроку прочитать сообщение.
-        await UniTask.Delay(3000);
+        await UniTask.Delay(3000, cancellationToken: token);
 
         // Плавно скрываем текст, после чего gameLogic сможет показать следующую фразу.
         while (textUI.color.a > 0f)
         {
+            token.ThrowIfCancellationRequested();
             color.a -= Time.deltaTime * fadeSpeed;
             textUI.color = color;
-            await UniTask.Yield();
+            await UniTask.Yield(token);
         }
 
         textUI.gameObject.SetActive(false);

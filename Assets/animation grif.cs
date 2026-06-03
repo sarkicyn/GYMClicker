@@ -36,10 +36,10 @@ public class animationgrif : MonoBehaviour
 
     void Update()
     {
-        // if (logi?.Panel != null && !logi.Panel.activeSelf)
-        // {
-        //     state = TutorState.CanTrain;
-        // }
+        if (logi?.Panel != null && !logi.Panel.activeSelf)
+        {
+            state = TutorState.CanTrain;
+        }
        
         if (TryGetClickPosition(out Vector2 position) && HitsBarbell(position))///если вызванные методы вернут true то вызываем метод анимации
         {
